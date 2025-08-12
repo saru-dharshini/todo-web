@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#7c5cff">
+  <link rel="icon" href="/icons/icon-192.png">
+  <!-- Optional iOS meta (for manual Add to Home Screen on iOS) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Todo App — Vanilla JS</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa4b2;
+      --accent:#7c5cff;
+      --accent-2:#5ce0c6;
+      --text:#e6eef6;
+      --danger:#ff6b6b;
+      --glass: rgba(255,255,255,0.03);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#041028 0%, #07121b 100%);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:760px;
+    }
+
+    header{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      margin-bottom:18px;
+    }
+    .logo{
+      width:56px;height:56px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),#5f8bff);
+      display:grid;place-items:center;font-weight:700;color:white;
+      box-shadow:0 8px 30px rgba(124,92,255,0.18);
+      font-size:20px;
+    }
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .card{
+      background:linear-gradient(180deg,var(--card), #071022 60%);
+      padding:18px;
+      border-radius:14px;
+      box-shadow:0 10px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+
+    .new-task{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-bottom:12px;
+    }
+
+    .new-task input[type="text"]{
+      flex:1;
+      background:var(--glass);
+      border:1px solid rgba(255,255,255,0.03);
+      padding:12px 14px;
+      border-radius:10px;
+      color:var(--text);
+      font-size:15px;
+      outline:none;
+      transition:box-shadow .15s, border-color .15s;
+    }
+    .new-task input[type="text"]:focus{
+      box-shadow:0 6px 20px rgba(124,92,255,0.12);
+      border-color:rgba(124,92,255,0.4);
+    }
+
+    .btn{
+      background:linear-gradient(180deg,var(--accent), #5f8bff);
+      border:none;color:white;padding:10px 14px;border-radius:10px;
+      font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(92,80,255,0.12);
+    }
+    .btn.ghost{
+      background:transparent;border:1px solid rgba(255,255,255,0.04);
+      color:var(--muted);box-shadow:none;font-weight:500;
+    }
+
+    .controls{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .filters{
+      display:flex;
+      gap:8px;
+      background:transparent;
+      padding:6px;
+      border-radius:8px;
+    }
+    .filter{
+      background:transparent;padding:8px 10px;border-radius:8px;border:none;color:var(--muted);
+      cursor:pointer;font-weight:600;
+    }
+    .filter.active{
+      color:var(--text);background:linear-gradient(90deg, rgba(124,92,255,0.12), rgba(92,224,198,0.05));
+      box-shadow:inset 0 -2px 0 rgba(124,92,255,0.15);
+    }
+
+    ul.list{
+      list-style:none;margin:12px 0 0 0;padding:0;max-height:52vh;overflow:auto;
+    }
+    li.item{
+      display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;margin-bottom:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border:1px solid rgba(255,255,255,0.02);
+    }
+
+    .check{
+      width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);
+      display:grid;place-items:center;cursor:pointer;
+      flex-shrink:0;
+    }
+    .check.done{background:linear-gradient(90deg,var(--accent-2),var(--accent));border:none;color:#022;}
+    .title{
+      flex:1;font-size:15px;word-break:break-word;
+    }
+    .title.done{ text-decoration:line-through;color:var(--muted);opacity:0.9 }
+
+    .actions{
+      display:flex;gap:8px;align-items:center;
+    }
+    .icon-btn{
+      border:none;background:transparent;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;
+    }
+    .icon-btn:hover{color:var(--text);background:rgba(255,255,255,0.02)}
+
+    .meta{
+      color:var(--muted);font-size:13px;margin-top:8px;display:flex;gap:10px;align-items:center;
+    }
+
+    .empty{
+      text-align:center;padding:28px;color:var(--muted);border-radius:10px;background:transparent;margin-top:8px;
+    }
+
+    /* small screens */
+    @media (max-width:520px){
+      header{gap:10px}
+      .logo{width:48px;height:48px;font-size:18px}
+      .new-task input[type="text"]{padding:10px}
+      .btn{padding:9px 12px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">TD</div>
+      <div>
+        <h1>Todo — Plain HTML/CSS/JS</h1>
+        <p class="lead">Small, fast, and persistent. Enter to add. Double-click a task to edit.</p>
+      </div>
+    </header>
+
+    <div class="card" role="application" aria-label="Todo app">
+      <div class="new-task">
+        <input id="newTaskInput" type="text" placeholder="Add a new task and press Enter..." aria-label="New task">
+        <button id="addBtn" class="btn" aria-label="Add task">Add</button>
+      </div>
+
+      <div class="controls">
+        <div class="filters" role="tablist" aria-label="Filters">
+          <button class="filter active" data-filter="all" role="tab" aria-selected="true">All</button>
+          <button class="filter" data-filter="active" role="tab">Active</button>
+          <button class="filter" data-filter="completed" role="tab">Completed</button>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="meta" aria-live="polite"><span id="count">0</span> tasks</div>
+          <button id="clearCompleted" class="btn ghost" title="Clear completed tasks">Clear Completed</button>
+        </div>
+      </div>
+
+      <ul id="taskList" class="list" aria-live="polite" aria-label="Tasks list"></ul>
+
+      <div id="empty" class="empty" hidden>
+        No tasks yet. Add your first task ✨
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const KEY = 'todo-app-tasks-v1';
+      const $ = sel => document.querySelector(sel);
+      const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+      const input = $('#newTaskInput');
+      const addBtn = $('#addBtn');
+      const list = $('#taskList');
+      const countSpan = $('#count');
+      const filters = $$('.filter');
+      const clearCompletedBtn = $('#clearCompleted');
+      const empty = $('#empty');
+
+      let tasks = [];
+      let filter = 'all';
+
+      // load
+      function load(){
+        try {
+          const raw = localStorage.getItem(KEY);
+          tasks = raw ? JSON.parse(raw) : [];
+        } catch(e){
+          tasks = [];
+        }
+      }
+
+      // save
+      function save(){
+        localStorage.setItem(KEY, JSON.stringify(tasks));
+      }
+
+      // utilities
+      function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+      // render
+      function render(){
+        // filter tasks
+        const visible = tasks.filter(t => {
+          if(filter === 'active') return !t.done;
+          if(filter === 'completed') return t.done;
+          return true;
+        });
+
+        list.innerHTML = '';
+        if(visible.length === 0){
+          empty.hidden = false;
+        } else {
+          empty.hidden = true;
+        }
+
+        visible.forEach(t => {
+          const li = document.createElement('li');
+          li.className = 'item';
+          li.dataset.id = t.id;
+
+          li.innerHTML = `
+            <button class="check ${t.done ? 'done' : ''}" aria-label="${t.done ? 'Mark as not done' : 'Mark as done'}" title="${t.done ? 'Mark as not done' : 'Mark as done'}">
+              ${t.done ? '✓' : ''}
+            </button>
+            <div class="title ${t.done ? 'done' : ''}" tabindex="0" role="textbox" aria-label="Task: ${escapeHtml(t.text)}">${escapeHtml(t.text)}</div>
+            <div class="actions">
+              <button class="icon-btn edit" title="Edit task (double-click also)" aria-label="Edit">&#9998;</button>
+              <button class="icon-btn delete" title="Delete task" aria-label="Delete">🗑️</button>
+            </div>
+          `;
+          list.appendChild(li);
+        });
+
+        countSpan.textContent = tasks.length;
+      }
+
+      function escapeHtml(s){
+        return String(s).replace(/[&<>"']/g, c => ({
+          '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+        }[c]));
+      }
+
+      // actions
+      function addTask(text){
+        text = text.trim();
+        if(!text) return;
+        tasks.unshift({ id: uid(), text, done:false, created: Date.now() });
+        save();
+        render();
+      }
+
+      function toggleDone(id){
+        const t = tasks.find(x => x.id === id);
+        if(t){ t.done = !t.done; save(); render(); }
+      }
+
+      function deleteTask(id){
+        tasks = tasks.filter(x => x.id !== id);
+        save();
+        render();
+      }
+
+      function updateTask(id, newText){
+        const t = tasks.find(x => x.id === id);
+        if(t){ t.text = newText.trim(); save(); render(); }
+      }
+
+      function clearCompleted(){
+        tasks = tasks.filter(x => !x.done);
+        save();
+        render();
+      }
+
+      // events
+      addBtn.addEventListener('click', () => {
+        addTask(input.value);
+        input.value = '';
+        input.focus();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){
+          addTask(input.value);
+          input.value = '';
+        }
+      });
+
+      list.addEventListener('click', (e) => {
+        const item = e.target.closest('li.item');
+        if(!item) return;
+        const id = item.dataset.id;
+
+        if(e.target.closest('.check')){
+          toggleDone(id);
+        } else if(e.target.closest('.delete')){
+          if(confirm('Delete this task?')) deleteTask(id);
+        } else if(e.target.closest('.edit')){
+          startEdit(item, id);
+        }
+      });
+
+      // double click to edit title
+      list.addEventListener('dblclick', (e) => {
+        const titleEl = e.target.closest('.title');
+        if(!titleEl) return;
+        const item = titleEl.closest('li.item');
+        startEdit(item, item.dataset.id);
+      });
+
+      // keyboard: Enter on focused title to start editing
+      list.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' && e.target.classList.contains('title')){
+          const item = e.target.closest('li.item');
+          startEdit(item, item.dataset.id);
+        }
+      });
+
+      function startEdit(item, id){
+        const title = item.querySelector('.title');
+        const current = tasks.find(t => t.id === id);
+        if(!current) return;
+
+        // make an input inplace
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = current.text;
+        inp.style.width = '100%';
+        inp.style.fontSize = '15px';
+        inp.style.padding = '8px';
+        inp.style.borderRadius = '8px';
+        inp.style.background = 'transparent';
+        inp.style.color = 'var(--text)';
+        inp.className = 'editing-input';
+
+        title.replaceWith(inp);
+        inp.focus();
+        // select content
+        inp.setSelectionRange(0, inp.value.length);
+
+        function finish(shouldSave){
+          if(shouldSave){
+            const v = inp.value.trim();
+            if(v) updateTask(id, v);
+            else {
+              // if emptied, delete
+              if(confirm('Empty task text — delete task?')) deleteTask(id);
+              else render();
+            }
+          } else {
+            render();
+          }
+          document.removeEventListener('click', onDocClick, true);
+        }
+
+        function onDocClick(ev){
+          if(ev.target === inp) return;
+          finish(true);
+        }
+
+        inp.addEventListener('keydown', (ev) => {
+          if(ev.key === 'Enter') finish(true);
+          else if(ev.key === 'Escape') finish(false);
+        });
+
+        // click outside to save
+        document.addEventListener('click', onDocClick, true);
+      }
+
+      // filters
+      filters.forEach(f => {
+        f.addEventListener('click', () => {
+          filters.forEach(x => x.classList.remove('active'));
+          f.classList.add('active');
+          filter = f.dataset.filter;
+          filters.forEach(x => x.setAttribute('aria-selected', x === f ? 'true' : 'false'));
+          render();
+        });
+      });
+
+      clearCompletedBtn.addEventListener('click', () => {
+        if(confirm('Remove all completed tasks?')) clearCompleted();
+      });
+
+      // initial load
+      load();
+      render();
+
+      // expose for debugging (optional)
+      window.todo = { get tasks(){ return tasks; }, add: addTask, clearCompleted };
+
+    })();
+  </script>
+</body>
+</html>00
